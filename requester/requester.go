@@ -98,6 +98,8 @@ type Work struct {
 	start    time.Duration
 
 	report *report
+	// Preview output the current result in advance
+	ReportPreview time.Duration
 }
 
 func (b *Work) writer() io.Writer {
@@ -120,7 +122,7 @@ func (b *Work) Init() {
 func (b *Work) Run() {
 	b.Init()
 	b.start = now()
-	b.report = newReport(b.writer(), b.results, b.Output, b.N)
+	b.report = newReport(b.writer(), b.results, b.Output, b.N, b.ReportPreview)
 	// Run the reporter first, it polls the result channel until it is closed.
 	go func() {
 		runReporter(b.report)

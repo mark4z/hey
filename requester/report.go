@@ -20,6 +20,7 @@ import (
 	"io"
 	"log"
 	"sort"
+	"sync"
 	"time"
 )
 
@@ -50,6 +51,8 @@ type report struct {
 	offsets     []float64
 	statusCodes []int
 
+	metricMutex sync.RWMutex
+
 	results chan *result
 	done    chan bool
 	total   time.Duration
@@ -60,10 +63,11 @@ type report struct {
 	numRes    int64
 	output    string
 
-	w io.Writer
+	w       io.Writer
+	preview time.Duration
 }
 
-func newReport(w io.Writer, results chan *result, output string, n int) *report {
+func newReport(w io.Writer, results chan *result, output string, n int, preview time.Duration) *report {
 	cap := min(n, maxRes)
 	return &report{
 		output:      output,
@@ -78,6 +82,7 @@ func newReport(w io.Writer, results chan *result, output string, n int) *report 
 		delayLats:   make([]float64, 0, cap),
 		lats:        make([]float64, 0, cap),
 		statusCodes: make([]int, 0, cap),
+		preview:     preview,
 	}
 }
 

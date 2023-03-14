@@ -56,6 +56,7 @@ var (
 	q = flag.Float64("q", 0, "")
 	t = flag.Int("t", 20, "")
 	z = flag.Duration("z", 0, "")
+	p = flag.Duration("p", 5, "")
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
@@ -121,6 +122,7 @@ func main() {
 	conc := *c
 	q := *q
 	dur := *z
+	report := *p
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -234,6 +236,7 @@ func main() {
 		H2:                 *h2,
 		ProxyAddr:          proxyURL,
 		Output:             *output,
+		ReportPreview:      report,
 	}
 	w.Init()
 
