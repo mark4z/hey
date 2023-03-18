@@ -105,9 +105,8 @@ var (
   {{ if gt .SizeTotal 0 }}
   Total data:	{{ .SizeTotal }} bytes
   Size/request:	{{ .SizeReq }} bytes{{ end }}
-
-Latency distribution:{{ range .LatencyDistribution }}
-  {{ .Percentage }}%% in {{ formatNumber .Latency }} secs{{ end }}
+Response time histogram:
+{{ histogram .Histogram }}
 Status code distribution:{{ range $code, $num := .StatusCodeDist }}
   [{{ $code }}]	{{ $num }} responses{{ end }}
 {{ if gt (len .ErrorDist) 0 }}Error distribution:{{ range $err, $num := .ErrorDist }}
