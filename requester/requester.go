@@ -107,6 +107,7 @@ func (b *Work) writer() io.Writer {
 	if b.Writer == nil {
 		writer := uilive.New()
 		writer.Start()
+		b.Writer = writer
 		return writer
 	}
 	return b.Writer
@@ -127,9 +128,7 @@ func (b *Work) Run() {
 	b.start = now()
 	b.report = newReport(b.writer(), b.results, b.Output, b.N, b.ReportPreview)
 	// Run the reporter first, it polls the result channel until it is closed.
-	go func() {
-		runReporter(b.report)
-	}()
+	go runReporter(b.report)
 	go b.runIntervalReport(b.report)
 	b.runWorkers()
 	b.Finish()
@@ -167,6 +166,9 @@ type Stopper interface {
 }
 
 func (b *Work) Finish() {
+	//stop run metrics
+	close(b.report.results)
+
 	total := now() - b.start
 	b.report.finalize(total, false)
 	if w, ok := b.Writer.(Stopper); ok {
@@ -294,7 +296,6 @@ func (b *Work) runWorkers() {
 		}()
 	}
 	wg.Wait()
-	close(b.report.results)
 }
 
 // cloneRequest returns a clone of the provided *http.Request.

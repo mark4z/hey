@@ -72,7 +72,6 @@ func newReport(w io.Writer, results chan *result, output string, n int, preview 
 	return &report{
 		output:      output,
 		results:     results,
-		done:        make(chan struct{}),
 		errorDist:   make(map[string]int),
 		w:           w,
 		connLats:    make([]float64, 0, cap),
@@ -89,7 +88,7 @@ func newReport(w io.Writer, results chan *result, output string, n int, preview 
 func runReporter(r *report) {
 	// Loop will continue until channel is closed
 	for res := range r.results {
-		calculation := func() {
+		func() {
 			r.metricMutex.Lock()
 			defer r.metricMutex.Unlock()
 
@@ -117,8 +116,7 @@ func runReporter(r *report) {
 					r.sizeTotal += res.contentLength
 				}
 			}
-		}
-		calculation()
+		}()
 	}
 }
 
@@ -144,7 +142,10 @@ func (r *report) print(shortReport bool) {
 }
 
 func (r *report) printf(s string, v ...interface{}) {
-	fmt.Fprintf(r.w, s, v...)
+	_, err := fmt.Fprintf(r.w, s, v...)
+	if err != nil {
+		log.Println("error:", err.Error())
+	}
 }
 
 func (r *report) snapshot() Report {
