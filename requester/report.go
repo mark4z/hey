@@ -120,8 +120,6 @@ func runReporter(r *report) {
 		}
 		calculation()
 	}
-	// Signal reporter is done.
-	close(r.done)
 }
 
 func (r *report) finalize(total time.Duration, shortReport bool) {

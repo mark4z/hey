@@ -17,6 +17,7 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"github.com/gosuri/uilive"
 	"io"
@@ -138,7 +139,7 @@ func (b *Work) runIntervalReport(r *report) {
 	if r.preview.Seconds() < 1 {
 		return
 	}
-	// Interval Report
+	// Interval report
 	ticker := time.NewTicker(r.preview)
 	for {
 		select {
@@ -158,9 +159,7 @@ func (b *Work) runIntervalReport(r *report) {
 
 func (b *Work) Stop() {
 	// Send stop signal so that workers can stop gracefully.
-	for i := 0; i < b.C; i++ {
-		b.stopCh <- struct{}{}
-	}
+	close(b.stopCh)
 }
 
 type Stopper interface {
@@ -168,17 +167,14 @@ type Stopper interface {
 }
 
 func (b *Work) Finish() {
-	close(b.results)
 	total := now() - b.start
-	// Wait until the reporter is done.
-	<-b.report.done
 	b.report.finalize(total, false)
 	if w, ok := b.Writer.(Stopper); ok {
 		w.Stop()
 	}
 }
 
-func (b *Work) makeRequest(c *http.Client) {
+func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
 	s := now()
 	var size int64
 	var code int
@@ -215,7 +211,7 @@ func (b *Work) makeRequest(c *http.Client) {
 			resStart = now()
 		},
 	}
-	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
+	req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
@@ -251,16 +247,20 @@ func (b *Work) runWorker(client *http.Client, n int) {
 			return http.ErrUseLastResponse
 		}
 	}
+
 	for i := 0; i < n; i++ {
+		ctx, cancelFunc := context.WithCancel(context.Background())
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
+			cancelFunc()
 			return
 		default:
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(client)
+			b.makeRequest(ctx, client)
+			cancelFunc()
 		}
 	}
 }
@@ -294,6 +294,7 @@ func (b *Work) runWorkers() {
 		}()
 	}
 	wg.Wait()
+	close(b.report.results)
 }
 
 // cloneRequest returns a clone of the provided *http.Request.
