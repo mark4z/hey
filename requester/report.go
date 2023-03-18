@@ -54,7 +54,7 @@ type report struct {
 	metricMutex sync.RWMutex
 
 	results chan *result
-	done    chan bool
+	done    chan struct{}
 	total   time.Duration
 
 	errorDist map[string]int
@@ -72,7 +72,7 @@ func newReport(w io.Writer, results chan *result, output string, n int, preview 
 	return &report{
 		output:      output,
 		results:     results,
-		done:        make(chan bool, 1),
+		done:        make(chan struct{}),
 		errorDist:   make(map[string]int),
 		w:           w,
 		connLats:    make([]float64, 0, cap),
@@ -89,36 +89,42 @@ func newReport(w io.Writer, results chan *result, output string, n int, preview 
 func runReporter(r *report) {
 	// Loop will continue until channel is closed
 	for res := range r.results {
-		r.numRes++
-		if res.err != nil {
-			r.errorDist[res.err.Error()]++
-		} else {
-			r.avgTotal += res.duration.Seconds()
-			r.avgConn += res.connDuration.Seconds()
-			r.avgDelay += res.delayDuration.Seconds()
-			r.avgDNS += res.dnsDuration.Seconds()
-			r.avgReq += res.reqDuration.Seconds()
-			r.avgRes += res.resDuration.Seconds()
-			if len(r.resLats) < maxRes {
-				r.lats = append(r.lats, res.duration.Seconds())
-				r.connLats = append(r.connLats, res.connDuration.Seconds())
-				r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
-				r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
-				r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
-				r.resLats = append(r.resLats, res.resDuration.Seconds())
-				r.statusCodes = append(r.statusCodes, res.statusCode)
-				r.offsets = append(r.offsets, res.offset.Seconds())
-			}
-			if res.contentLength > 0 {
-				r.sizeTotal += res.contentLength
+		calculation := func() {
+			r.metricMutex.Lock()
+			defer r.metricMutex.Unlock()
+
+			r.numRes++
+			if res.err != nil {
+				r.errorDist[res.err.Error()]++
+			} else {
+				r.avgTotal += res.duration.Seconds()
+				r.avgConn += res.connDuration.Seconds()
+				r.avgDelay += res.delayDuration.Seconds()
+				r.avgDNS += res.dnsDuration.Seconds()
+				r.avgReq += res.reqDuration.Seconds()
+				r.avgRes += res.resDuration.Seconds()
+				if len(r.resLats) < maxRes {
+					r.lats = append(r.lats, res.duration.Seconds())
+					r.connLats = append(r.connLats, res.connDuration.Seconds())
+					r.dnsLats = append(r.dnsLats, res.dnsDuration.Seconds())
+					r.reqLats = append(r.reqLats, res.reqDuration.Seconds())
+					r.delayLats = append(r.delayLats, res.delayDuration.Seconds())
+					r.resLats = append(r.resLats, res.resDuration.Seconds())
+					r.statusCodes = append(r.statusCodes, res.statusCode)
+					r.offsets = append(r.offsets, res.offset.Seconds())
+				}
+				if res.contentLength > 0 {
+					r.sizeTotal += res.contentLength
+				}
 			}
 		}
+		calculation()
 	}
 	// Signal reporter is done.
-	r.done <- true
+	close(r.done)
 }
 
-func (r *report) finalize(total time.Duration) {
+func (r *report) finalize(total time.Duration, shortReport bool) {
 	r.total = total
 	r.rps = float64(r.numRes) / r.total.Seconds()
 	r.average = r.avgTotal / float64(len(r.lats))
@@ -127,18 +133,16 @@ func (r *report) finalize(total time.Duration) {
 	r.avgDNS = r.avgDNS / float64(len(r.lats))
 	r.avgReq = r.avgReq / float64(len(r.lats))
 	r.avgRes = r.avgRes / float64(len(r.lats))
-	r.print()
+	r.print(shortReport)
 }
 
-func (r *report) print() {
+func (r *report) print(shortReport bool) {
 	buf := &bytes.Buffer{}
-	if err := newTemplate(r.output).Execute(buf, r.snapshot()); err != nil {
+	if err := newTemplate(r.output, shortReport).Execute(buf, r.snapshot()); err != nil {
 		log.Println("error:", err.Error())
 		return
 	}
 	r.printf(buf.String())
-
-	r.printf("\n")
 }
 
 func (r *report) printf(s string, v ...interface{}) {

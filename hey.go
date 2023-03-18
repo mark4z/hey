@@ -29,7 +29,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rakyll/hey/requester"
+	"github.com/mark4z/hey/requester"
 )
 
 const (
@@ -56,7 +56,7 @@ var (
 	q = flag.Float64("q", 0, "")
 	t = flag.Int("t", 20, "")
 	z = flag.Duration("z", 0, "")
-	p = flag.Duration("p", 5, "")
+	p = flag.Duration("p", time.Second, "")
 
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
@@ -93,6 +93,7 @@ Options:
   -a  Basic authentication, username:password.
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
+  -p  Preview results interval. Default is 1s.
 
   -host	HTTP Host header.
 

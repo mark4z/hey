@@ -42,11 +42,14 @@ import (
 	"text/template"
 )
 
-func newTemplate(output string) *template.Template {
+func newTemplate(output string, shortReport bool) *template.Template {
 	outputTmpl := output
 	switch outputTmpl {
 	case "":
 		outputTmpl = defaultTmpl
+		if shortReport {
+			outputTmpl = defaultShortImpl
+		}
 	case "csv":
 		outputTmpl = csvTmpl
 	}
@@ -93,6 +96,23 @@ func histogram(buckets []Bucket) string {
 }
 
 var (
+	defaultShortImpl = `Summary:
+  Total:	{{ formatNumber .Total.Seconds }} secs
+  Slowest:	{{ formatNumber .Slowest }} secs
+  Fastest:	{{ formatNumber .Fastest }} secs
+  Average:	{{ formatNumber .Average }} secs
+  Requests/sec:	{{ formatNumber .Rps }}
+  {{ if gt .SizeTotal 0 }}
+  Total data:	{{ .SizeTotal }} bytes
+  Size/request:	{{ .SizeReq }} bytes{{ end }}
+
+Latency distribution:{{ range .LatencyDistribution }}
+  {{ .Percentage }}%% in {{ formatNumber .Latency }} secs{{ end }}
+Status code distribution:{{ range $code, $num := .StatusCodeDist }}
+  [{{ $code }}]	{{ $num }} responses{{ end }}
+{{ if gt (len .ErrorDist) 0 }}Error distribution:{{ range $err, $num := .ErrorDist }}
+  [{{ $num }}]	{{ $err }}{{ end }}{{ end }}
+`
 	defaultTmpl = `
 Summary:
   Total:	{{ formatNumber .Total.Seconds }} secs

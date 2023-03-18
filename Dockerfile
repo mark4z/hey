@@ -14,10 +14,10 @@ RUN adduser \
     "${USER}"
 
 RUN apt-get update && apt-get install -y ca-certificates
-RUN go get github.com/rakyll/hey
+RUN go get github.com/mark4z/hey
 
 # Build
-WORKDIR /go/src/github.com/rakyll/hey
+WORKDIR /go/src/github.com/mark4z/hey
 RUN go mod download
 RUN CGO_ENABLED=0 GOOS=linux go build -o /go/bin/hey hey.go
 

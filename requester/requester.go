@@ -18,12 +18,12 @@ package requester
 import (
 	"bytes"
 	"crypto/tls"
+	"github.com/gosuri/uilive"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
-	"os"
 	"sync"
 	"time"
 
@@ -104,7 +104,9 @@ type Work struct {
 
 func (b *Work) writer() io.Writer {
 	if b.Writer == nil {
-		return os.Stdout
+		writer := uilive.New()
+		writer.Start()
+		return writer
 	}
 	return b.Writer
 }
@@ -127,8 +129,31 @@ func (b *Work) Run() {
 	go func() {
 		runReporter(b.report)
 	}()
+	go b.runIntervalReport(b.report)
 	b.runWorkers()
 	b.Finish()
+}
+
+func (b *Work) runIntervalReport(r *report) {
+	if r.preview.Seconds() < 1 {
+		return
+	}
+	// Interval Report
+	ticker := time.NewTicker(r.preview)
+	for {
+		select {
+		case <-ticker.C:
+			updateReport := func() {
+				r.metricMutex.RLock()
+				defer r.metricMutex.RUnlock()
+				total := now() - b.start
+				b.report.finalize(total, true)
+			}
+			updateReport()
+		case <-r.done:
+			return
+		}
+	}
 }
 
 func (b *Work) Stop() {
@@ -138,12 +163,19 @@ func (b *Work) Stop() {
 	}
 }
 
+type Stopper interface {
+	Stop()
+}
+
 func (b *Work) Finish() {
 	close(b.results)
 	total := now() - b.start
 	// Wait until the reporter is done.
 	<-b.report.done
-	b.report.finalize(total)
+	b.report.finalize(total, false)
+	if w, ok := b.Writer.(Stopper); ok {
+		w.Stop()
+	}
 }
 
 func (b *Work) makeRequest(c *http.Client) {
