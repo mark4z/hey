@@ -46,6 +46,7 @@ type result struct {
 	resDuration   time.Duration // response "read" duration
 	delayDuration time.Duration // delay between response and request
 	contentLength int64
+	newConnection bool
 }
 
 type Work struct {
@@ -182,6 +183,7 @@ func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
 	var code int
 	var dnsStart, connStart, resStart, reqStart, delayStart time.Duration
 	var dnsDuration, connDuration, resDuration, reqDuration, delayDuration time.Duration
+	var connectionStart bool
 	var req *http.Request
 	if b.RequestFunc != nil {
 		req = b.RequestFunc()
@@ -212,6 +214,9 @@ func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
 			delayDuration = now() - delayStart
 			resStart = now()
 		},
+		ConnectStart: func(network, addr string) {
+			connectionStart = true
+		},
 	}
 	req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
 	resp, err := c.Do(req)
@@ -235,6 +240,7 @@ func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
 		reqDuration:   reqDuration,
 		resDuration:   resDuration,
 		delayDuration: delayDuration,
+		newConnection: connectionStart,
 	}
 }
 

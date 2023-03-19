@@ -38,18 +38,19 @@ type report struct {
 	average  float64
 	rps      float64
 
-	avgConn     float64
-	avgDNS      float64
-	avgReq      float64
-	avgRes      float64
-	avgDelay    float64
-	connLats    []float64
-	dnsLats     []float64
-	reqLats     []float64
-	resLats     []float64
-	delayLats   []float64
-	offsets     []float64
-	statusCodes []int
+	avgConn       float64
+	avgDNS        float64
+	avgReq        float64
+	avgRes        float64
+	avgDelay      float64
+	connLats      []float64
+	dnsLats       []float64
+	reqLats       []float64
+	resLats       []float64
+	delayLats     []float64
+	offsets       []float64
+	statusCodes   []int
+	newConnection int64
 
 	metricMutex sync.RWMutex
 
@@ -116,6 +117,9 @@ func runReporter(r *report) {
 					r.sizeTotal += res.contentLength
 				}
 			}
+			if res.newConnection {
+				r.newConnection++
+			}
 		}()
 	}
 }
@@ -170,6 +174,7 @@ func (r *report) snapshot() Report {
 		DelayLats:   make([]float64, len(r.lats)),
 		Offsets:     make([]float64, len(r.lats)),
 		StatusCodes: make([]int, len(r.lats)),
+		NewConn:     r.newConnection,
 	}
 
 	if len(r.lats) == 0 {
@@ -317,6 +322,7 @@ type Report struct {
 
 	LatencyDistribution []LatencyDistribution
 	Histogram           []Bucket
+	NewConn             int64
 }
 
 type LatencyDistribution struct {

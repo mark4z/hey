@@ -105,6 +105,7 @@ var (
   {{ if gt .SizeTotal 0 }}
   Total data:	{{ .SizeTotal }} bytes
   Size/request:	{{ .SizeReq }} bytes{{ end }}
+  New connection:	{{ .NewConn }}
 Response time histogram:
 {{ histogram .Histogram }}
 Status code distribution:{{ range $code, $num := .StatusCodeDist }}
@@ -122,6 +123,7 @@ Summary:
   {{ if gt .SizeTotal 0 }}
   Total data:	{{ .SizeTotal }} bytes
   Size/request:	{{ .SizeReq }} bytes{{ end }}
+  New connection:	{{ .NewConn }}
 
 Response time histogram:
 {{ histogram .Histogram }}
@@ -130,11 +132,11 @@ Latency distribution:{{ range .LatencyDistribution }}
   {{ .Percentage }}%% in {{ formatNumber .Latency }} secs{{ end }}
 
 Details (average, fastest, slowest):
-  DNS+dialup:	{{ formatNumber .AvgConn }} secs, {{ formatNumber .ConnMax }} secs, {{ formatNumber .ConnMin }} secs
-  DNS-lookup:	{{ formatNumber .AvgDNS }} secs, {{ formatNumber .DnsMax }} secs, {{ formatNumber .DnsMin }} secs
-  req write:	{{ formatNumber .AvgReq }} secs, {{ formatNumber .ReqMax }} secs, {{ formatNumber .ReqMin }} secs
-  resp wait:	{{ formatNumber .AvgDelay }} secs, {{ formatNumber .DelayMax }} secs, {{ formatNumber .DelayMin }} secs
-  resp read:	{{ formatNumber .AvgRes }} secs, {{ formatNumber .ResMax }} secs, {{ formatNumber .ResMin }} secs
+  DNS+dialup:		{{ formatNumber .AvgConn }} secs, {{ formatNumber .ConnMax }} secs, {{ formatNumber .ConnMin }} secs
+  DNS-lookup:		{{ formatNumber .AvgDNS }} secs, {{ formatNumber .DnsMax }} secs, {{ formatNumber .DnsMin }} secs
+  req write:		{{ formatNumber .AvgReq }} secs, {{ formatNumber .ReqMax }} secs, {{ formatNumber .ReqMin }} secs
+  resp wait:		{{ formatNumber .AvgDelay }} secs, {{ formatNumber .DelayMax }} secs, {{ formatNumber .DelayMin }} secs
+  resp read:		{{ formatNumber .AvgRes }} secs, {{ formatNumber .ResMax }} secs, {{ formatNumber .ResMin }} secs
 
 Status code distribution:{{ range $code, $num := .StatusCodeDist }}
   [{{ $code }}]	{{ $num }} responses{{ end }}
