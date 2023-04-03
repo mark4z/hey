@@ -17,6 +17,7 @@ package requester
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"github.com/gosuri/uilive"
 	"io"
@@ -304,17 +305,9 @@ func (b *Work) runWorkers() {
 // The clone is a shallow copy of the struct and its Header map.
 func cloneRequest(r *http.Request, body []byte) *http.Request {
 	// shallow copy of the struct
-	r2 := new(http.Request)
-	*r2 = *r
-	// deep copy of the Header
-	r2.Header = make(http.Header, len(r.Header))
-	for k, s := range r.Header {
-		r2.Header[k] = append([]string(nil), s...)
-	}
-	if len(body) > 0 {
-		r2.Body = ioutil.NopCloser(bytes.NewReader(body))
-	}
-	return r2
+	newReq := r.Clone(context.Background())
+	newReq.Body = ioutil.NopCloser(bytes.NewReader(body))
+	return newReq
 }
 
 func min(a, b int) int {
