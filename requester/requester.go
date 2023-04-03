@@ -136,7 +136,7 @@ func (b *Work) Run() {
 }
 
 func (b *Work) runIntervalReport(r *report) {
-	if r.preview.Seconds() < 1 {
+	if r.preview.Milliseconds() < 1 {
 		return
 	}
 	// Interval report
