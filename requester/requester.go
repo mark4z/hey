@@ -17,7 +17,6 @@ package requester
 
 import (
 	"bytes"
-	"context"
 	"crypto/tls"
 	"github.com/gosuri/uilive"
 	"io"
@@ -177,7 +176,7 @@ func (b *Work) Finish() {
 	}
 }
 
-func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
+func (b *Work) makeRequest(c *http.Client) {
 	s := now()
 	var size int64
 	var code int
@@ -218,7 +217,7 @@ func (b *Work) makeRequest(ctx context.Context, c *http.Client) {
 			connectionStart = true
 		},
 	}
-	req = req.WithContext(httptrace.WithClientTrace(ctx, trace))
+	req = req.WithContext(httptrace.WithClientTrace(req.Context(), trace))
 	resp, err := c.Do(req)
 	if err == nil {
 		size = resp.ContentLength
@@ -257,18 +256,15 @@ func (b *Work) runWorker(client *http.Client, n int) {
 	}
 
 	for i := 0; i < n; i++ {
-		ctx, cancelFunc := context.WithCancel(context.Background())
 		// Check if application is stopped. Do not send into a closed channel.
 		select {
 		case <-b.stopCh:
-			cancelFunc()
 			return
 		default:
 			if b.QPS > 0 {
 				<-throttle
 			}
-			b.makeRequest(ctx, client)
-			cancelFunc()
+			b.makeRequest(client)
 		}
 	}
 }
@@ -292,7 +288,7 @@ func (b *Work) runWorkers() {
 	} else {
 		tr.TLSNextProto = make(map[string]func(string, *tls.Conn) http.RoundTripper)
 	}
-	client := &http.Client{Transport: tr, Timeout: time.Duration(b.Timeout) * time.Second}
+	client := &http.Client{Transport: tr}
 
 	// Ignore the case where b.N % b.C != 0.
 	for i := 0; i < b.C; i++ {
