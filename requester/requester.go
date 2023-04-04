@@ -280,6 +280,7 @@ func (b *Work) runWorkers() {
 			ServerName:         b.Request.Host,
 		},
 		MaxIdleConnsPerHost: min(b.C, maxIdleConn),
+		MaxConnsPerHost:     min(b.C, maxIdleConn),
 		DisableCompression:  b.DisableCompression,
 		DisableKeepAlives:   b.DisableKeepAlives,
 		Proxy:               http.ProxyURL(b.ProxyAddr),
