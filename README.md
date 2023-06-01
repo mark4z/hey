@@ -11,8 +11,8 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
-*PreBuild binary: https://github.com/mark4z/hey/releases
-*Go get: go get github.com/mark4z/hey
+* PreBuild binary: https://github.com/mark4z/hey/releases
+* Go get: go get github.com/mark4z/hey
 
 ## Usage
 
