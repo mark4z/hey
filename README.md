@@ -11,14 +11,8 @@ To preserve the name for its original owner, we renamed this project to hey.
 
 ## Installation
 
-* Linux 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_linux_amd64
-* Mac 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_darwin_amd64
-* Windows 64-bit: https://hey-release.s3.us-east-2.amazonaws.com/hey_windows_amd64
-
-### Package Managers
-
-macOS:
--  [Homebrew](https://brew.sh/) users can use `brew install hey`.
+*PreBuild binary: https://github.com/mark4z/hey/releases
+*Go get: go get github.com/mark4z/hey
 
 ## Usage
 
@@ -40,7 +34,7 @@ Options:
   -o  Output type. If none provided, a summary is printed.
       "csv" is the only supported alternative. Dumps the response
       metrics in comma-separated values format.
-
+  -p  Duration of preview result. Default 1s. Examples: -z 500ms -z 1s.
   -m  HTTP method, one of GET, POST, PUT, DELETE, HEAD, OPTIONS.
   -H  Custom HTTP header. You can specify as many as needed by repeating the flag.
       For example, -H "Accept: text/html" -H "Content-Type: application/xml" .
