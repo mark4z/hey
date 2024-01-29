@@ -22,6 +22,7 @@ import (
 	"github.com/gosuri/uilive"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -98,6 +99,8 @@ type Work struct {
 	results  chan *result
 	stopCh   chan struct{}
 	start    time.Duration
+
+	Debug bool
 
 	report *report
 	// Preview output the current result in advance
@@ -223,7 +226,12 @@ func (b *Work) makeRequest(c *http.Client) {
 	if err == nil {
 		size = resp.ContentLength
 		code = resp.StatusCode
-		io.Copy(ioutil.Discard, resp.Body)
+		if b.Debug {
+			res, _ := io.ReadAll(resp.Body)
+			log.Printf("res %s", string(res))
+		} else {
+			_, _ = io.Copy(io.Discard, resp.Body)
+		}
 		resp.Body.Close()
 	}
 	t := now()

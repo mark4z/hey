@@ -58,6 +58,8 @@ var (
 	z = flag.Duration("z", 0, "")
 	p = flag.Duration("p", time.Second, "")
 
+	r = flag.Bool("r", false, "")
+
 	h2   = flag.Bool("h2", false, "")
 	cpus = flag.Int("cpus", runtime.GOMAXPROCS(-1), "")
 
@@ -94,6 +96,7 @@ Options:
   -x  HTTP Proxy address as host:port.
   -h2 Enable HTTP/2.
   -p  Preview results interval. Default is 1s.
+  -r  Print http response
 
   -host	HTTP Host header.
 
@@ -124,6 +127,7 @@ func main() {
 	q := *q
 	dur := *z
 	report := *p
+	debug := *r
 
 	if dur > 0 {
 		num = math.MaxInt32
@@ -238,6 +242,7 @@ func main() {
 		ProxyAddr:          proxyURL,
 		Output:             *output,
 		ReportPreview:      report,
+		Debug:              debug,
 	}
 	w.Init()
 
